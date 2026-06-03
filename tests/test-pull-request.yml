@@ -1,4 +1,4 @@
-name: Test PR Branch Name - Pull Request
+name: Test PR Branch Name - pull request
 on:
   workflow_dispatch:
 jobs:
@@ -16,15 +16,14 @@ jobs:
         with:
           repo-token: ${{ github.token }}
         continue-on-error: true
-      - name: Assert action ran with repo-token input
+      - name: Assert repo-token input was accepted
         run: |
-          echo "Action outcome: ${{ steps.action.outcome }}"
-          echo "Branch output: ${{ steps.action.outputs.branch }}"
+          echo "outcome: ${{ steps.action.outcome }}"
           # The action may fail in act due to no real GitHub API, but it must
-          # at least be invoked with the repo-token input provided.
-          # We verify the step was reached (not skipped).
+          # have been invoked (not skipped due to missing required input).
+          # A 'skipped' outcome would indicate the input was not provided.
           if [ "${{ steps.action.outcome }}" = "skipped" ]; then
-            echo "FAIL: action step was skipped unexpectedly"
+            echo "FAIL: action was skipped, repo-token input may not have been passed"
             exit 1
           fi
           echo "PASS: action was invoked with repo-token input"
