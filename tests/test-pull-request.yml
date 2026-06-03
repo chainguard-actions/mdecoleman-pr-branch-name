@@ -1,4 +1,4 @@
-name: Test PR Branch Name - Pull Request
+name: Test PR Branch Name - pull request scenario
 on:
   workflow_dispatch:
 jobs:
