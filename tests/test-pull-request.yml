@@ -1,4 +1,4 @@
-name: Test PR Branch Name - pull request scenario
+name: Test PR Branch Name - pull request
 on:
   workflow_dispatch:
 jobs:
@@ -15,14 +15,13 @@ jobs:
         uses: .
         with:
           repo-token: ${{ github.token }}
-        continue-on-error: true
-      - name: Assert repo-token input was accepted
+      - name: Assert branch output is set
+        env:
+          ACTUAL: ${{ steps.action.outputs.branch }}
         run: |
-          echo "outcome: ${{ steps.action.outcome }}"
-          # The action may fail in act due to missing GitHub API context,
-          # but we verify the input was accepted (not a missing-input error)
-          if [ "${{ steps.action.outcome }}" = "skipped" ]; then
-            echo "FAIL: step was skipped unexpectedly"
+          echo "actual branch: $ACTUAL"
+          if [ -z "$ACTUAL" ]; then
+            echo "FAIL: expected branch output to be non-empty"
             exit 1
           fi
-          echo "PASS: repo-token input was accepted and action ran"
+          echo "PASS: branch output is '$ACTUAL'"
