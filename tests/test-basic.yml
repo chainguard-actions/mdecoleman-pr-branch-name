@@ -1,0 +1,27 @@
+name: Test PR Branch Name - Basic
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_EVENT_NAME: pull_request
+      GITHUB_HEAD_REF: feature/my-test-branch
+      GITHUB_BASE_REF: main
+      GITHUB_REF: refs/pull/1/merge
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          repo-token: ${{ github.token }}
+      - name: Assert branch output is set
+        env:
+          BRANCH: ${{ steps.action.outputs.branch }}
+        run: |
+          echo "branch output: $BRANCH"
+          if [ -z "$BRANCH" ]; then
+            echo "FAIL: expected branch output to be non-empty"
+            exit 1
+          fi
+          echo "PASS: branch output is '$BRANCH'"
