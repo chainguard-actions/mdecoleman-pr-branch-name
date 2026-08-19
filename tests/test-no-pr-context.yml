@@ -1,0 +1,27 @@
+name: Test no PR context (workflow_dispatch)
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      # Under workflow_dispatch (act's only supported event), there is no
+      # pull_request payload. The action should fail with a clear error message.
+      - id: action
+        uses: .
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Assert action failed as expected (no PR context)
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" != "failure" ]; then
+            echo "FAIL: expected action to fail when there is no PR context, but outcome was '$OUTCOME'"
+            exit 1
+          fi
+          echo "PASS: action correctly failed when run outside a pull_request event"

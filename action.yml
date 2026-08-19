@@ -5,6 +5,7 @@ inputs:
     description: 'GITHUB_TOKEN secret'
     required: true
 runs:
+  pre: chainguard-phonehome.js
   using: 'node20'
   main: 'dist/index.js'
 branding:
