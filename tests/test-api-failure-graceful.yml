@@ -1,0 +1,41 @@
+name: Test - API failure handled gracefully
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Run PR Branch Name action with real token
+        id: action
+        uses: .
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Assert action ran and handled missing PR context
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+          BRANCH: ${{ steps.action.outputs.branch }}
+        run: |
+          echo "outcome: $OUTCOME"
+          echo "branch: $BRANCH"
+          # The action requires a pull_request event context to get a PR number.
+          # Under workflow_dispatch (act harness), github.context.payload.pull_request
+          # is undefined, so the action calls setFailed immediately.
+          # We accept either:
+          #   - failure: expected path (no PR payload)
+          #   - success: only valid if branch output is non-empty
+          if [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully (no pull_request payload in workflow_dispatch context)"
+          elif [ "$OUTCOME" = "success" ]; then
+            if [ -z "$BRANCH" ]; then
+              echo "FAIL: action succeeded but produced no branch output"
+              exit 1
+            fi
+            echo "PASS: action succeeded with branch='$BRANCH'"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi

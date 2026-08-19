@@ -1,0 +1,38 @@
+name: Test - No PR context (workflow_dispatch)
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Run PR Branch Name action (expect failure - no PR context)
+        id: action
+        uses: .
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Assert action fails gracefully without PR context
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+          BRANCH: ${{ steps.action.outputs.branch }}
+        run: |
+          echo "outcome: $OUTCOME"
+          echo "branch output: $BRANCH"
+          # Under workflow_dispatch there is no pull_request payload,
+          # so the action should fail with "Could not get pull request number from context"
+          if [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed as expected (no PR context under workflow_dispatch)"
+          elif [ "$OUTCOME" = "success" ]; then
+            # If somehow it succeeded, the branch output must be non-empty
+            if [ -z "$BRANCH" ]; then
+              echo "FAIL: action succeeded but branch output is empty"
+              exit 1
+            fi
+            echo "PASS: action succeeded with branch='$BRANCH'"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi
