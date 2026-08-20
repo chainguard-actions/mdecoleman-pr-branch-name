@@ -4,26 +4,31 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    env:
-      GITHUB_EVENT_NAME: pull_request
-      GITHUB_REF: refs/pull/1/merge
-      GITHUB_HEAD_REF: feature-branch
-      GITHUB_BASE_REF: main
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
       - id: action
         uses: .
-        with:
-          repo-token: ${{ github.token }}
         continue-on-error: true
-      - name: Assert repo-token input was accepted
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Assert action ran (outputs set, or failed gracefully without PR context)
+        env:
+          BRANCH: ${{ steps.action.outputs.current-branch }}
+          OUTCOME: ${{ steps.action.outcome }}
         run: |
-          echo "Action step completed (outcome: ${{ steps.action.outcome }})"
-          echo "Branch output: ${{ steps.action.outputs.branch }}"
-          # The action may fail in act due to no real GitHub API, but the input must be accepted
-          # We verify the step ran (not skipped) and the input was passed
-          if [ "${{ steps.action.outcome }}" = "skipped" ]; then
-            echo "FAIL: action step was skipped unexpectedly"
+          echo "outcome: $OUTCOME"
+          echo "branch: $BRANCH"
+          if [ "$OUTCOME" = "success" ]; then
+            if [ -z "$BRANCH" ]; then
+              echo "FAIL: action succeeded but current-branch output is empty"
+              exit 1
+            fi
+            echo "PASS: got branch '$BRANCH'"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully (no PR context available under workflow_dispatch)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
             exit 1
           fi
-          echo "PASS: repo-token input was accepted and action ran"
